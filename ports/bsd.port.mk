@@ -861,9 +861,10 @@ FreeBSD_MAINTAINER=	portmgr@FreeBSD.org
 #				- Name of configure script, relative to ${CONFIGURE_WRKSRC}.
 #				  Default: "Makefile.PL" if PERL_CONFIGURE is set,
 #				  "configure" otherwise.
-# CONFIGURE_TARGET
-#				- The name of target to call when GNU_CONFIGURE is
-#				  defined.
+# CONFIGURE_TARGET		
+#				- Compile executables for another machine by
+#				  defining target architecture. 
+#				  Only if GNU_CONFIGURE is defined.
 #				  Default: ${ARCH}-portbld-freebsd${OSREL}
 # GNU_CONFIGURE_PREFIX
 #				- The directory passed as prefix to the configure script if
@@ -2866,7 +2867,7 @@ PKGLATESTFILE=		${PKGLATESTREPOSITORY}/${LATEST_LINK}${PKG_SUFX}
 
 CONFIGURE_SCRIPT?=	configure
 CONFIGURE_TARGET?=	${ARCH}-portbld-freebsd${OSREL}
-CONFIGURE_TARGET:=	${CONFIGURE_TARGET:S/--build=//}
+CONFIGURE_TARGET:=	${CONFIGURE_TARGET:S/--host=//}
 CONFIGURE_LOG?=		config.log
 
 # A default message to print if do-configure fails.
@@ -2891,7 +2892,7 @@ SET_LATE_CONFIGURE_ARGS= \
 	    _LATE_CONFIGURE_ARGS="$${_LATE_CONFIGURE_ARGS} --infodir=${PREFIX}/${INFO_PATH}/${INFO_SUBDIR}" ; \
 	fi ; \
 	if [ -z "`./${CONFIGURE_SCRIPT} --version 2>&1 | ${EGREP} -i '(autoconf.*2\.13|Unrecognized option)'`" ]; then \
-		_LATE_CONFIGURE_ARGS="$${_LATE_CONFIGURE_ARGS} --build=${CONFIGURE_TARGET}" ; \
+		_LATE_CONFIGURE_ARGS="$${_LATE_CONFIGURE_ARGS} --host=${CONFIGURE_TARGET}" ; \
 	else \
 		_LATE_CONFIGURE_ARGS="$${_LATE_CONFIGURE_ARGS} ${CONFIGURE_TARGET}" ; \
 	fi ;
@@ -4975,6 +4976,12 @@ _INSTALL_DEPENDS=	\
 .for deptype in PKG EXTRACT PATCH FETCH BUILD RUN
 ${deptype:L}-depends:
 .if defined(${deptype}_DEPENDS)
+.if defined(BUILD_DEPENDS)
+#  Place additional env vars when crossing
+.endif
+.if defined(RUN_DEPENDS)
+cross-envs:
+.endif
 .if !defined(NO_DEPENDS)
 	@for i in `${ECHO_CMD} "${${deptype}_DEPENDS}"`; do \
 		prog=$${i%%:*}; \
